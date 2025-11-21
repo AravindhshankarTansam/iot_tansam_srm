@@ -47,7 +47,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     }
     setIsLoading(true);
     try {
-      const res = await fetch(`${BACKEND}/api/sql/select-tables/${selectedId}`, {
+      const res = await fetch(`${BACKEND_URL}/api/sql/select-tables/${selectedId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tables: selectedTables }),
@@ -212,7 +212,7 @@ const WS_URL =
       }
 
       if (!selectedTables || selectedTables.length === 0) {
-        const res = await fetch(`${BACKEND}/api/sql/tables/${selectedId}`);
+        const res = await fetch(`${BACKEND_URL}/api/sql/tables/${selectedId}`);
         const data = await res.json();
         if (!data.success) {
           alert("Failed to fetch tables: " + (data.error || "Unknown error"));
