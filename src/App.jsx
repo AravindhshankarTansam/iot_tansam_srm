@@ -24,7 +24,7 @@ import NotFound from "./pages/NotFound.jsx";
 import ChatBot from "./ui/ChatBot.jsx";
 import LiquidBackdrop from "./ui/LiquidBackdrop.jsx";
 import { GlassHeader } from "./ui/GlassHeader.jsx";
-import logoImage from "./LOGO.jpg";
+import logoImage from "./LOGO.png";
 
 // ✅ Centralized navigation
 const navLinks = [
@@ -74,7 +74,7 @@ function Layout() {
               <img
                 src={logoImage}
                 alt="Datanaut logo"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-fill"
               />
             </div>
             <div>
@@ -85,7 +85,7 @@ function Layout() {
                     : "text-slate-900 dark:text-slate-100"
                 }`}
               >
-                DATANAUT
+                TANSAM HUB CENTRE
               </p>
               <p
                 className={`text-sm md:text-lg ${
