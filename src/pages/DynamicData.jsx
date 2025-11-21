@@ -132,8 +132,11 @@ export default function DynamicData() {
   const wsReconnectTimerRef = useRef(null);
   const wsStoppedRef = useRef(false);
   const lastUpdateRef = useRef(Date.now());
-  const BACKEND = "http://localhost:8085";
-  const WS_URL = window.location.protocol === "https:" ? "wss://localhost:8085" : "ws://localhost:8085";
+const BACKEND = import.meta.env.VITE_BACKEND_URL;
+// WebSocket must match backend domain
+const WS_URL =
+  BACKEND.replace("https://", "wss://")
+         .replace("http://", "ws://");
 
   const nowIso = () => new Date().toISOString();
 
