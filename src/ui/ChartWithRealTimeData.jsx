@@ -5,7 +5,7 @@ import ChartRenderer from "./ChartRenderer.jsx";
 import { toRendererConfig } from "../utils/dynamicChartUtils.js";
 import { buildChartData } from "../utils/chartData.js";
 
-const BACKEND_URL = "http://localhost:8085";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const WS_URL = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss://localhost:8085' : 'ws://localhost:8085';
 
 /**

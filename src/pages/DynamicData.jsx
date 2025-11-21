@@ -9,7 +9,7 @@ function SqlTableSelector({ selectedId, onTablesSelected }) {
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
 
-  const BACKEND = "http://localhost:8085";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     if (selectedId) fetchAvailableTables();
@@ -20,7 +20,7 @@ function SqlTableSelector({ selectedId, onTablesSelected }) {
     setIsLoading(true);
     setFetchError(null);
     try {
-      const res = await fetch(`${BACKEND}/api/sql/tables/${selectedId}`);
+      const res = await fetch(`${BACKEND_URL}/api/sql/tables/${selectedId}`);
       const data = await res.json();
       if (data.success) setAvailableTables(data.tables);
       else setFetchError(data.error || "Unable to fetch tables");

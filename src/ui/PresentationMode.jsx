@@ -5,7 +5,7 @@ import ChartWithRealTimeData from "./ChartWithRealTimeData.jsx";
 import { buildChartData } from "../utils/chartData.js";
 import GlassCard from "./GlassCard.jsx";
 
-const BACKEND_URL = "http://localhost:8085";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function PresentationMode() {
   const { charts: staticCharts, datasets } = useStore();

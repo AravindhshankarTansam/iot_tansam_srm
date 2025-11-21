@@ -6,7 +6,7 @@ import DynamicChart3D from "../ui/DynamicChart3D.jsx";
 import Dynamic3DCharts from "../ui/Dynamic3DCharts.jsx";
 import { buildChartData } from "../utils/chartData.js";
 
-const BACKEND_URL = "http://localhost:8085"; // change if backend runs elsewhere
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL; // change if backend runs elsewhere
 
 const chartTypes = [
   { value: "line", label: "Line", description: "Track trends across time" },

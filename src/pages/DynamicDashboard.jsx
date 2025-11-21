@@ -9,7 +9,7 @@ import {
   loadDynamicDashboardCache
 } from "../utils/dynamicChartUtils.js";
 
-const BACKEND_URL = "http://localhost:8085"; // change if backend runs elsewhere
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL; // change if backend runs elsewhere
 
 const formatNumber = (value) => {
   if (value >= 1000) {
