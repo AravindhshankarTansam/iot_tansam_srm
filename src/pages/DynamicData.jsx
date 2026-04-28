@@ -134,7 +134,6 @@ export default function DynamicData() {
   const lastUpdateRef = useRef(Date.now());
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const WS_URL = import.meta.env.VITE_WS_URL;
-  console.log("WS URL:", WS_URL);
 
 
 
@@ -425,13 +424,21 @@ export default function DynamicData() {
     const connect = () => {
       if (wsStoppedRef.current) return;
       try {
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.close();
+        if (wsRef.current) {
+          // Detach handlers so closing doesn't trigger a reconnect loop
+          wsRef.current.onopen = null;
+          wsRef.current.onclose = null;
+          wsRef.current.onerror = null;
+          wsRef.current.onmessage = null;
+          if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+            wsRef.current.close();
+          }
         }
       } catch (e) { /* ignore */ }
-      // const ws = new WebSocket("ws://localhost:8085/ws");
-      const WS_URL = import.meta.env.VITE_WS_URL;
-      wsRef.current = WS_URL;
+      const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8085/ws";
+      console.log("🔌 Attempting WebSocket connection to:", WS_URL);
+      const ws = new WebSocket(WS_URL);
+      wsRef.current = ws;
 
       ws.onopen = () => {
         // clear any pending reconnect
@@ -449,12 +456,12 @@ export default function DynamicData() {
           connect();
         }, 2000);
       };
-      ws.onclose = () => {
-        console.log("🔴 WebSocket disconnected");
+      ws.onclose = (ev) => {
+        console.log(`🔴 WebSocket disconnected (code: ${ev.code}, reason: ${ev.reason || 'none'})`);
         scheduleReconnect();
       };
-      ws.onerror = () => {
-        console.error("⚠️ WebSocket error");
+      ws.onerror = (err) => {
+        console.error("⚠️ WebSocket error:", err);
         scheduleReconnect();
       };
       ws.onmessage = (ev) => {

@@ -70,7 +70,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <ThemeProvider>
       <AuthProvider>
         <StoreProvider>
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <ErrorBoundary>
               <Suspense fallback={<div className="p-6 text-center">Loading...</div>}>
                 <App />
