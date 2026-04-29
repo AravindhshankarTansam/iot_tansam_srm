@@ -11,11 +11,6 @@ class ConnectionManager {
     this.wss = null; // WebSocket server reference
   }
 
-  async listSerialPorts() {
-    const ports = await SerialPort.list();
-    return ports.map(p => ({ path: p.path, manufacturer: p.manufacturer }));
-  }
-
   // Attempt to coerce non-JSON serial lines into a flat object for charts
   parseNonJsonSerialLine(line) {
     const text = (typeof line === 'string' ? line : String(line)).trim();
