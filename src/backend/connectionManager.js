@@ -610,6 +610,13 @@ class ConnectionManager {
 
     // Always ensure the data listener is attached once the parser exists
     if (!c.dataListenerSet) {
+      // 🐧 Linux Guard: If we are on a Linux cloud server, don't try to open "COM" ports
+      if (process.platform === 'linux' && c.config.port && c.config.port.startsWith('COM')) {
+        console.log(`ℹ️  Cloud Server: Ignoring local port ${c.config.port}. Waiting for relayed data instead...`);
+        c.dataListenerSet = true; // Mark as "set" so we don't keep trying
+        return;
+      }
+
       if (c.parser) {
         c.parser.on('data', (line) => {
           try {
