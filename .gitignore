@@ -7,3 +7,10 @@
 .env.example
 .env.example.test
 /src/backend/node_modules
+dist/
+.env
+/node_modules
+dist/
+.env
+.env.example    
+.env.*

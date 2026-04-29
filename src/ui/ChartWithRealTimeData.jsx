@@ -5,8 +5,8 @@ import ChartRenderer from "./ChartRenderer.jsx";
 import { toRendererConfig } from "../utils/dynamicChartUtils.js";
 import { buildChartData } from "../utils/chartData.js";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-const WS_URL = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss://localhost:8085' : 'ws://localhost:8085';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : 'http://localhost:8085');
+const WS_URL = import.meta.env.VITE_WS_URL || (typeof window !== 'undefined' ? (window.location.protocol === 'https:' ? `wss://${window.location.host}/ws` : `ws://${window.location.host}/ws`) : 'ws://localhost:8085/ws');
 
 /**
  * Wrapper component that fetches real-time data for charts
