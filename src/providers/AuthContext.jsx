@@ -20,11 +20,12 @@ const testFirebaseAuth = async () => {
         unsubscribe();
         resolve(user);
       });
-      setTimeout(() => reject(new Error('Auth test timeout')), 1000);
+      // Increased timeout to 5 seconds to account for slow connections
+      setTimeout(() => reject(new Error('Auth test timeout after 5s')), 5000);
     });
     return true;
   } catch (error) {
-    console.log('🔥 Firebase Auth test failed, switching to demo mode:', error.message);
+    console.log('🔥 Firebase Auth test check:', error.message);
     return false;
   }
 };
@@ -50,12 +51,18 @@ export function AuthProvider({ children }) {
       const authWorking = await testFirebaseAuth();
       
       if (!authWorking) {
-        console.log('🔥 Switching to DEMO MODE - Firebase Auth not properly configured');
-        console.log('📝 To fix: Enable Email/Password authentication in Firebase Console > Authentication > Sign-in method');
-        setIsDemoMode(true);
-        setUser(null);
-        setLoading(false);
-        return;
+        if (DEMO_MODE) {
+          console.log('🔥 Switching to DEMO MODE - Firebase Auth not properly configured');
+          setIsDemoMode(true);
+          setUser(null);
+          setLoading(false);
+          return;
+        } else {
+          console.warn('⚠️ Firebase Auth test timed out or failed, but DEMO_MODE is false. Continuing with real Firebase.');
+          console.log('📝 If login fails, check: Firebase Console > Authentication > Sign-in method');
+          setIsDemoMode(false);
+          // Don't return here - proceed to subscribe to onAuthStateChanged
+        }
       }
 
       if (!auth) {
@@ -156,7 +163,7 @@ export function AuthProvider({ children }) {
     // setUser will be updated by onAuthStateChanged
   };
 
-  const value = useMemo(() => ({ user, signup, login, loginWithGoogle, logout, loading }), [user, loading]);
+  const value = useMemo(() => ({ user, signup, login, loginWithGoogle, logout, loading, isDemoMode }), [user, loading, isDemoMode]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

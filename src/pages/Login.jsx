@@ -5,18 +5,13 @@ import { useAuth } from "../providers/AuthContext.jsx";
 import { DEMO_MODE } from "../firebase.js";
 
 export default function Login() {
-  const { login, signup, loginWithGoogle, logout } = useAuth();
+  const { login, signup, loginWithGoogle, logout, isDemoMode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authError, setAuthError] = useState("");
   const [isRegister, setIsRegister] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(DEMO_MODE);
   const [statusMessage, setStatusMessage] = useState("");
 
-  useEffect(() => {
-    // Check if we're in demo mode
-    setIsDemoMode(DEMO_MODE);
-  }, []);
   const {
     register,
     handleSubmit,

@@ -425,12 +425,11 @@ export default function DynamicData() {
       if (wsStoppedRef.current) return;
       try {
         if (wsRef.current) {
-          // Detach handlers so closing doesn't trigger a reconnect loop
           wsRef.current.onopen = null;
           wsRef.current.onclose = null;
           wsRef.current.onerror = null;
           wsRef.current.onmessage = null;
-          if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+          if (wsRef.current.readyState === WebSocket.OPEN) {
             wsRef.current.close();
           }
         }
