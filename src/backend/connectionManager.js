@@ -170,35 +170,11 @@ class ConnectionManager {
       }
     }
 
-    // Always ensure timestamp exists
+    // Ensure timestamp exists for the UI
     if (!base.timestamp) {
-      const now = new Date();
-      base.timestamp = now.toISOString();
-      if (!base.ts) base.ts = now.getTime();
+      base.timestamp = new Date().toISOString();
     }
-
-    // Add metadata fields if not present
-    if (!Object.prototype.hasOwnProperty.call(base, 'source')) {
-      base.source = 'serial';
-    }
-    if (!Object.prototype.hasOwnProperty.call(base, 'status')) {
-      base.status = 'ok';
-    }
-
-    // Ensure a 'value' field exists for charts that need a primary value
-    const numericKeys = Object.keys(base).filter((k) => typeof base[k] === 'number');
-    const preferred = ['value', 'val', 'reading', 'batt', 'battery', 'temp', 'temperature', 'hum', 'humid', 'humidity', 'press', 'pressure', 'co2', 'lux'];
-    const preferredKey = preferred.find((k) => Object.prototype.hasOwnProperty.call(base, k) && typeof base[k] === 'number');
-    const firstNumericKey = preferredKey || numericKeys.find((k) => k !== 'timestamp');
-    if (firstNumericKey && !Object.prototype.hasOwnProperty.call(base, 'value')) {
-      base.value = base[firstNumericKey];
-    }
-
-    // If no numeric values found, add a default value field
-    if (numericKeys.length === 0 && !base.value) {
-      base.value = 0;
-    }
-
+    
     return base;
   }
 
@@ -672,10 +648,10 @@ class ConnectionManager {
 
             // Emit WebSocket update if available
             if (this.wss) {
-              this.broadcastUpdate(id, "serial", flatRow);
+              this.broadcastUpdate(id, "Serial Data", flatRow);
             }
             // RELAY TO CLOUD: Push data to your production domain
-            this.relayToCloud(id, "serial", flatRow);
+            this.relayToCloud(id, "Serial Data", flatRow);
           } catch (err) {
             console.error(`Error processing serial data: ${err.message}`);
           }

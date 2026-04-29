@@ -434,7 +434,10 @@ export default function DynamicData() {
           }
         }
       } catch (e) { /* ignore */ }
-      const WS_URL = import.meta.env.VITE_WS_URL || (typeof window !== 'undefined' ? (window.location.protocol === 'https:' ? `wss://${window.location.host}/ws` : `ws://${window.location.host}/ws`) : 'ws://localhost:8085/ws');
+      const baseWS = import.meta.env.VITE_WS_URL || (typeof window !== 'undefined' ? (window.location.protocol === 'https:' ? `wss://${window.location.host}/ws` : `ws://${window.location.host}/ws`) : 'ws://localhost:8085/ws');
+      // Ensure path consistency
+      const WS_URL = baseWS.endsWith('/ws') ? baseWS : `${baseWS.replace(/\/$/, '')}/ws`;
+      
       console.log("🔌 Attempting WebSocket connection to:", WS_URL);
       const ws = new WebSocket(WS_URL);
       wsRef.current = ws;
