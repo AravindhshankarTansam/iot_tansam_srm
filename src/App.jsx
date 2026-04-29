@@ -16,7 +16,7 @@ import DataPage from "./pages/Data.jsx";
 import VisualizePage from "./pages/Visualize.jsx";
 import DynamicDataPage from "./pages/DynamicData.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
-import DynamicDashboard from "./pages/DynamicDashboard.jsx"; 
+import DynamicDashboard from "./pages/DynamicDashboard.jsx";
 import DynamicVisualizePage from "./pages/DynamicVisualize.jsx";
 import PresentationMode from "./ui/PresentationMode.jsx";
 import PresentationWindow from "./ui/PresentationWindow.jsx";
@@ -51,9 +51,8 @@ function Layout() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col transition-colors w-full ${
-        isLoginPage ? "bg-slate-950" : "bg-slate-100 dark:bg-slate-900"
-      }`}
+      className={`min-h-screen flex flex-col transition-colors w-full ${isLoginPage ? "bg-slate-950" : "bg-slate-100 dark:bg-slate-900"
+        }`}
     >
       <LiquidBackdrop />
       {/* ====== Header ====== */}
@@ -65,11 +64,10 @@ function Layout() {
             className="flex items-center gap-3"
           >
             <div
-              className={`glass-solid flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl shadow-lg md:h-28 md:w-28 ${
-                isLoginPage
+              className={`glass-solid flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl shadow-lg md:h-28 md:w-28 ${isLoginPage
                   ? "border border-white/40 shadow-white/20"
                   : "border border-white/60 shadow-brand-900/20 dark:border-slate-200/40 dark:shadow-brand-900/30"
-              }`}
+                }`}
             >
               <img
                 src={logoImage}
@@ -79,20 +77,18 @@ function Layout() {
             </div>
             <div>
               <p
-                className={`text-2xl font-semibold md:text-3xl ${
-                  isLoginPage
+                className={`text-2xl font-semibold md:text-3xl ${isLoginPage
                     ? "text-white"
                     : "text-slate-900 dark:text-slate-100"
-                }`}
+                  }`}
               >
                 TANSAM HUB CENTRE
               </p>
               <p
-                className={`text-sm md:text-lg ${
-                  isLoginPage
+                className={`text-sm md:text-lg ${isLoginPage
                     ? "text-slate-200"
                     : "text-slate-600 dark:text-slate-300"
-                }`}
+                  }`}
               >
                 Data ➤ Charts ➤ Insights
               </p>
@@ -106,11 +102,10 @@ function Layout() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`glass-hover rounded-full border px-4 py-2 font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-slate-900 ${
-                    location.pathname.startsWith(link.to)
+                  className={`glass-hover rounded-full border px-4 py-2 font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-slate-900 ${location.pathname.startsWith(link.to)
                       ? "border-white/30 bg-white/30 text-blue-900 shadow-sm shadow-brand-900/10 dark:border-white/20 dark:bg-white/10 dark:text-blue-100"
                       : "border-transparent text-slate-600 hover:bg-white/10 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-white/5"
-                  }`}
+                    }`}
                 >
                   {link.label}
                 </Link>
@@ -140,21 +135,19 @@ function Layout() {
               <button
                 type="button"
                 onClick={toggleTheme}
-                className={`glass-hover rounded-full border px-4 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-slate-900 ${
-                  isLoginPage
+                className={`glass-hover rounded-full border px-4 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-slate-900 ${isLoginPage
                     ? "border-white/40 text-white hover:bg-white/10"
                     : "border-slate-200 text-slate-600 hover:bg-white/10 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-white/5"
-                }`}
+                  }`}
               >
                 {theme === "dark" ? "Light mode" : "Dark mode"}
               </button>
               <Link
                 to="/login"
-                className={`glass-hover rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-slate-900 ${
-                  isLoginPage
+                className={`glass-hover rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100 dark:focus-visible:ring-offset-slate-900 ${isLoginPage
                     ? "border border-white/40 bg-white/25 text-white hover:bg-white/30"
                     : "border border-transparent bg-brand-500 text-white hover:bg-brand-600"
-                }`}
+                  }`}
               >
                 Login
               </Link>
@@ -171,8 +164,8 @@ function Layout() {
       {/* ====== Footer ====== */}
       <footer className="w-full py-4 text-center border-t border-slate-200 dark:border-slate-700">
         <div className="text-xs text-slate-500 dark:text-slate-400">
-          <p>&copy; 2025 DATANAUT. All rights reserved.</p>
-          <p className="mt-1">Developed by the DATANAUT Team</p>
+          <p>&copy; 2025 TANSAM. All rights reserved.</p>
+          <p className="mt-1">Developed by the TANSAM</p>
         </div>
       </footer>
 

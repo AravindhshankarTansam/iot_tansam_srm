@@ -9,7 +9,7 @@ function SqlTableSelector({ selectedId, onTablesSelected }) {
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     if (selectedId) fetchAvailableTables();
@@ -132,11 +132,10 @@ export default function DynamicData() {
   const wsReconnectTimerRef = useRef(null);
   const wsStoppedRef = useRef(false);
   const lastUpdateRef = useRef(Date.now());
-const BACKEND = import.meta.env.VITE_BACKEND_URL;
-// WebSocket must match backend domain
-const WS_URL =
-  BACKEND.replace("https://", "wss://")
-         .replace("http://", "ws://");
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const WS_URL = import.meta.env.VITE_WS_URL;
+
+
 
   const nowIso = () => new Date().toISOString();
 
@@ -245,7 +244,7 @@ const WS_URL =
 
   async function fetchConnections() {
     try {
-      const res = await fetch(`${BACKEND}/api/connections`);
+      const res = await fetch(`${BACKEND_URL}/api/connections`);
       const j = await res.json();
       if (j.success) setConnections(j.connections);
     } catch (e) {
@@ -258,7 +257,7 @@ const WS_URL =
     if (!id) return;
     console.log(`🔄 Fetching data for connection: ${id}`);
     try {
-      const res = await fetch(`${BACKEND}/api/data/${id}`);
+      const res = await fetch(`${BACKEND_URL}/api/data/${id}`);
       const j = await res.json();
       console.log(`📥 Data fetch response for ${id}:`, j);
 
@@ -425,10 +424,18 @@ const WS_URL =
     const connect = () => {
       if (wsStoppedRef.current) return;
       try {
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.close();
+        if (wsRef.current) {
+          wsRef.current.onopen = null;
+          wsRef.current.onclose = null;
+          wsRef.current.onerror = null;
+          wsRef.current.onmessage = null;
+          if (wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.close();
+          }
         }
       } catch (e) { /* ignore */ }
+      const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8085/ws";
+      console.log("🔌 Attempting WebSocket connection to:", WS_URL);
       const ws = new WebSocket(WS_URL);
       wsRef.current = ws;
 
@@ -448,12 +455,12 @@ const WS_URL =
           connect();
         }, 2000);
       };
-      ws.onclose = () => {
-        console.log("🔴 WebSocket disconnected");
+      ws.onclose = (ev) => {
+        console.log(`🔴 WebSocket disconnected (code: ${ev.code}, reason: ${ev.reason || 'none'})`);
         scheduleReconnect();
       };
-      ws.onerror = () => {
-        console.error("⚠️ WebSocket error");
+      ws.onerror = (err) => {
+        console.error("⚠️ WebSocket error:", err);
         scheduleReconnect();
       };
       ws.onmessage = (ev) => {
@@ -597,7 +604,7 @@ const WS_URL =
     const payload = { type: formType, config: { ...form.config, name: form.name } };
     console.log("Add Connection payload:", payload);
     try {
-      const res = await fetch(`${BACKEND}/api/add-connection`, {
+      const res = await fetch(`${BACKEND_URL}/api/add-connection`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -618,7 +625,7 @@ const WS_URL =
   const handleRemove = async (id) => {
     if (!window.confirm(`Remove connection ${id}?`)) return;
     try {
-      await fetch(`${BACKEND}/api/remove-connection/${id}`, { method: "DELETE" });
+      await fetch(`${BACKEND_URL}/api/remove-connection/${id}`, { method: "DELETE" });
       fetchConnections();
       if (selectedId === id) {
         setSelectedId(null);
@@ -815,7 +822,7 @@ const WS_URL =
                       try {
                         setRawLoading(true);
                         setRawJson(null);
-                        const res = await fetch(`${BACKEND}/api/data/${selectedId}`);
+                        const res = await fetch(`${BACKEND_URL}/api/data/${selectedId}`);
                         const j = await res.json();
                         setRawJson(j);
                         setRawOpen(true);
