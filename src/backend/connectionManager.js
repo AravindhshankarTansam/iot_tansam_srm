@@ -680,24 +680,36 @@ class ConnectionManager {
   }
 
   relayToCloud(connectionId, protocol, payload) {
-    if (!this.cloudWs || this.cloudWs.readyState !== 1) {
-      const url = process.env.CLOUD_WS_URL;
-      if (!url) return; 
-      
-      // Don't spam connection attempts if already trying
-      if (this.cloudWs && this.cloudWs.readyState === 0) return; // 0 is CONNECTING
+    const url = process.env.CLOUD_WS_URL;
+    if (!url) {
+      // Only log once to avoid spamming
+      if (!this.urlWarningLogged) {
+        console.log("⚠️ No CLOUD_WS_URL found in .env. Data will only stay local.");
+        this.urlWarningLogged = true;
+      }
+      return;
+    }
 
-      if (!this.cloudWs || this.cloudWs.readyState === 3) { // CLOSED
-        console.log(`🔌 Local PC: Attempting to bridge to Cloud -> ${url}`);
+    if (!this.cloudWs || this.cloudWs.readyState !== 1) {
+      if (this.cloudWs && this.cloudWs.readyState === 0) return; 
+
+      if (!this.cloudWs || this.cloudWs.readyState === 3) {
+        console.log(`🔌 Attempting to bridge to Cloud: ${url}`);
         try {
           this.cloudWs = new WebSocket(url);
           this.cloudWs.on('open', () => {
-            console.log("✅ Cloud Bridge: SUCCESS. Your local data is now flowing to the Cloud.");
+            console.log("✅ CLOUD BRIDGE CONNECTED!");
           });
           this.cloudWs.on('error', (err) => {
-            console.log("⚠️ Cloud Bridge: OFFLINE. Check your domain/internet:", err.message);
+            console.log("❌ CLOUD BRIDGE ERROR:", err.message);
           });
-        } catch (e) { return; }
+          this.cloudWs.on('close', () => {
+            console.log("🔌 CLOUD BRIDGE CLOSED");
+          });
+        } catch (e) { 
+          console.error("❌ Failed to create cloud bridge socket:", e.message);
+          return; 
+        }
       }
     }
     

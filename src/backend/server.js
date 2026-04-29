@@ -1,6 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
-dotenv.config({ path: "../../.env" });
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+console.log("📂 Loading .env from:", path.resolve(__dirname, "../../.env"));
+console.log("🌐 Cloud URL found:", process.env.CLOUD_WS_URL || "NOT FOUND");
 
 import cors from "cors";
 import bodyParser from "body-parser";
