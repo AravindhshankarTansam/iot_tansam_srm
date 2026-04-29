@@ -242,6 +242,30 @@ export default function DynamicData() {
     }
   };
 
+  const [availablePorts, setAvailablePorts] = useState([]);
+  const [isFetchingPorts, setIsFetchingPorts] = useState(false);
+
+  const fetchAvailablePorts = async () => {
+    setIsFetchingPorts(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/serial-ports`);
+      const data = await res.json();
+      if (data.success) {
+        setAvailablePorts(data.ports || []);
+      }
+    } catch (err) {
+      console.error("Error fetching serial ports:", err);
+    } finally {
+      setIsFetchingPorts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (formType === "serial") {
+      fetchAvailablePorts();
+    }
+  }, [formType]);
+
   async function fetchConnections() {
     try {
       const res = await fetch(`${BACKEND_URL}/api/connections`);
@@ -719,8 +743,34 @@ export default function DynamicData() {
       case "serial":
         return (
           <>
-            <input placeholder="Port (COM3, /dev/ttyUSB0)" value={form.config.port || ""} onChange={(e) => setConfigField("port", e.target.value)} className={inputStyle} />
-            <input placeholder="Baud Rate (9600)" type="number" value={form.config.baudRate || ""} onChange={(e) => setConfigField("baudRate", e.target.value)} className={inputStyle} />
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Select Port</label>
+                <button 
+                  type="button"
+                  onClick={fetchAvailablePorts}
+                  className="text-[10px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 px-2 py-0.5 rounded transition-colors"
+                >
+                  {isFetchingPorts ? "Scanning..." : "🔄 Refresh List"}
+                </button>
+              </div>
+              <select 
+                value={form.config.port || ""} 
+                onChange={(e) => setConfigField("port", e.target.value)} 
+                className={inputStyle}
+              >
+                <option value="">-- Choose a Port --</option>
+                {availablePorts.map((p) => (
+                  <option key={p.path} value={p.path}>
+                    {p.path} {p.manufacturer ? `(${p.manufacturer})` : ""}
+                  </option>
+                ))}
+                {availablePorts.length === 0 && !isFetchingPorts && (
+                  <option disabled>No ports detected</option>
+                )}
+              </select>
+            </div>
+            <input placeholder="Baud Rate (e.g. 9600)" type="number" value={form.config.baudRate || ""} onChange={(e) => setConfigField("baudRate", e.target.value)} className={inputStyle} />
           </>
         );
       default:

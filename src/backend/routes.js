@@ -297,6 +297,18 @@ router.get("/data/:id", async (req, res) => {
 });
 
 // Chart endpoints for Dynamic Dashboard
+router.get("/status", (req, res) => res.json({ status: "ok" }));
+
+// 🔥 NEW: List available serial ports for dynamic selection
+router.get("/serial-ports", async (req, res) => {
+  try {
+    const ports = await connectionManager.listSerialPorts();
+    res.json({ success: true, ports });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 router.get("/charts", (req, res) => {
   try {
     const charts = chartsStorage.getAll();

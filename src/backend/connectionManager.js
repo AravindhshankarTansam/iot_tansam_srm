@@ -2,12 +2,18 @@ import { createSqlConnection, getTables, previewTable } from "./modules/sql.js";
 import { createMqttConnection } from "./modules/mqtt.js";
 import { createSerialConnection } from "./modules/serial.js";
 import { createHttpConnection } from "./modules/http.js";
+import { SerialPort } from "serialport";
 
 class ConnectionManager {
   constructor() {
     this.connections = {};
     this.idCounter = 1;
     this.wss = null; // WebSocket server reference
+  }
+
+  async listSerialPorts() {
+    const ports = await SerialPort.list();
+    return ports.map(p => ({ path: p.path, manufacturer: p.manufacturer }));
   }
 
   // Attempt to coerce non-JSON serial lines into a flat object for charts
@@ -36,10 +42,19 @@ class ConnectionManager {
         else if (sepIndexCol !== -1) { sepIndex = sepIndexCol; }
         
         if (sepIndex > 0) {
-          const key = token.slice(0, sepIndex).trim().replace(/[^A-Za-z0-9_]/g, '_');
+          let key = token.slice(0, sepIndex).trim().toLowerCase();
           let valRaw = token.slice(sepIndex + 1).trim();
           
-          // Extract the first number found in the value (handles "175 cm")
+          // 🔥 FUZZY KEY MATCHING: Fix fragments like "ce", "DDDDDistance", etc.
+          if (key.includes('dist') || key === 'ce' || key.includes('stance')) {
+            key = 'Distance';
+          } else {
+            // Standard cleanup for other keys
+            key = key.replace(/[^a-z0-9_]/g, '');
+            if (key.length === 0) key = 'value';
+          }
+          
+          // Extract the first number found in the value
           const numMatch = valRaw.match(/[-+]?\d*\.?\d+/);
           if (numMatch) {
             result[key] = Number(numMatch[0]);
@@ -728,6 +743,21 @@ class ConnectionManager {
         protocol,
         payload
       }));
+    }
+  }
+
+  // 🔥 NEW: Dynamic port identification for Windows/Linux
+  async listSerialPorts() {
+    try {
+      const ports = await SerialPort.list();
+      return ports.map(p => ({
+        path: p.path,
+        manufacturer: p.manufacturer,
+        friendlyName: p.friendlyName || p.path
+      }));
+    } catch (err) {
+      console.error("Error listing serial ports:", err);
+      return [];
     }
   }
 }
