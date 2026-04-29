@@ -56,7 +56,11 @@ wss.on("connection", (ws, req) => {
       const data = JSON.parse(message);
 
       if (data.type === "relay") {
-        console.log(`📡 Relay for ${data.connectionId}`);
+        console.log(`📡 Relay received for ${data.connectionId}`);
+        
+        // 🔥 NEW: Automatically create a virtual connection on the cloud so it shows in the UI
+        connectionManager.ensureVirtualConnection(data.connectionId, data.protocol);
+        
         connectionManager.broadcastUpdate(
           data.connectionId,
           data.protocol,

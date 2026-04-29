@@ -666,17 +666,37 @@ class ConnectionManager {
     return c.dataCache;
   }
 
+  // Create a placeholder connection on the cloud so the UI knows where to put relayed data
+  ensureVirtualConnection(id, type) {
+    if (!this.connections[id]) {
+      console.log(`✨ Creating virtual connection for relayed data: ${id} (${type})`);
+      this.connections[id] = {
+        id,
+        type,
+        config: { name: `Remote ${type} (${id})` },
+        dataCache: (type === 'Serial Data' || type === 'serial') ? [] : {}
+      };
+    }
+  }
+
   relayToCloud(connectionId, protocol, payload) {
     if (!this.cloudWs || this.cloudWs.readyState !== 1) {
       const url = process.env.CLOUD_WS_URL;
-      if (!url) return; // No cloud URL configured
+      if (!url) return; 
       
+      // Don't spam connection attempts if already trying
+      if (this.cloudWs && this.cloudWs.readyState === 0) return; // 0 is CONNECTING
+
       if (!this.cloudWs || this.cloudWs.readyState === 3) { // CLOSED
-        console.log(`🔌 Attempting to connect to Cloud Relay: ${url}`);
+        console.log(`🔌 Local PC: Attempting to bridge to Cloud -> ${url}`);
         try {
           this.cloudWs = new WebSocket(url);
-          this.cloudWs.on('open', () => console.log("✅ Cloud Relay Connected"));
-          this.cloudWs.on('error', (err) => console.log("⚠️ Cloud Relay Offline:", err.message));
+          this.cloudWs.on('open', () => {
+            console.log("✅ Cloud Bridge: SUCCESS. Your local data is now flowing to the Cloud.");
+          });
+          this.cloudWs.on('error', (err) => {
+            console.log("⚠️ Cloud Bridge: OFFLINE. Check your domain/internet:", err.message);
+          });
         } catch (e) { return; }
       }
     }
