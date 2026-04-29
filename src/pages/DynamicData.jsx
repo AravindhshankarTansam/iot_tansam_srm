@@ -244,6 +244,7 @@ export default function DynamicData() {
 
   const [availablePorts, setAvailablePorts] = useState([]);
   const [isFetchingPorts, setIsFetchingPorts] = useState(false);
+  const [manualPortEntry, setManualPortEntry] = useState(false);
 
   const fetchAvailablePorts = async () => {
     setIsFetchingPorts(true);
@@ -745,30 +746,53 @@ export default function DynamicData() {
           <>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Select Port</label>
-                <button 
-                  type="button"
-                  onClick={fetchAvailablePorts}
-                  className="text-[10px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 px-2 py-0.5 rounded transition-colors"
-                >
-                  {isFetchingPorts ? "Scanning..." : "🔄 Refresh List"}
-                </button>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  {manualPortEntry ? "Enter Port Path" : "Select Port"}
+                </label>
+                <div className="flex gap-3 items-center">
+                  <button 
+                    type="button"
+                    onClick={() => setManualPortEntry(!manualPortEntry)}
+                    className="text-[10px] text-blue-500 hover:underline"
+                  >
+                    {manualPortEntry ? "Switch to List" : "Enter Manually"}
+                  </button>
+                  {!manualPortEntry && (
+                    <button 
+                      type="button"
+                      onClick={fetchAvailablePorts}
+                      className="text-[10px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 px-2 py-0.5 rounded transition-colors"
+                    >
+                      {isFetchingPorts ? "Scanning..." : "🔄 Refresh List"}
+                    </button>
+                  )}
+                </div>
               </div>
-              <select 
-                value={form.config.port || ""} 
-                onChange={(e) => setConfigField("port", e.target.value)} 
-                className={inputStyle}
-              >
-                <option value="">-- Choose a Port --</option>
-                {availablePorts.map((p) => (
-                  <option key={p.path} value={p.path}>
-                    {p.path} {p.manufacturer ? `(${p.manufacturer})` : ""}
-                  </option>
-                ))}
-                {availablePorts.length === 0 && !isFetchingPorts && (
-                  <option disabled>No ports detected</option>
-                )}
-              </select>
+              
+              {manualPortEntry ? (
+                <input 
+                  placeholder="/dev/ttyUSB0 or COM3" 
+                  value={form.config.port || ""} 
+                  onChange={(e) => setConfigField("port", e.target.value)} 
+                  className={inputStyle} 
+                />
+              ) : (
+                <select 
+                  value={form.config.port || ""} 
+                  onChange={(e) => setConfigField("port", e.target.value)} 
+                  className={inputStyle}
+                >
+                  <option value="">-- Choose a Port --</option>
+                  {availablePorts.map((p) => (
+                    <option key={p.path} value={p.path}>
+                      {p.friendlyName} {p.manufacturer !== 'Generic' ? `(${p.manufacturer})` : ""}
+                    </option>
+                  ))}
+                  {availablePorts.length === 0 && !isFetchingPorts && (
+                    <option disabled>No USB ports detected</option>
+                  )}
+                </select>
+              )}
             </div>
             <input placeholder="Baud Rate (e.g. 9600)" type="number" value={form.config.baudRate || ""} onChange={(e) => setConfigField("baudRate", e.target.value)} className={inputStyle} />
           </>

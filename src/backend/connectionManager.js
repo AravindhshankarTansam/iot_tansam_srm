@@ -741,22 +741,34 @@ class ConnectionManager {
     }
   }
 
-  // 🔥 NEW: Dynamic port identification for Windows/Linux
+  // 🔥 NEW: Dynamic port identification for Windows/Linux with Smart Filtering
   async listSerialPorts() {
     try {
       const ports = await SerialPort.list();
-      return ports.map(p => {
-        // On Linux, make sure we show the full /dev/ path
-        const isLinux = process.platform === 'linux';
+      const isLinux = process.platform === 'linux';
+      
+      const mapped = ports.map(p => {
         const displayName = (isLinux && !p.path.startsWith('/dev/')) ? `/dev/${p.path}` : p.path;
-        
         return {
           path: p.path,
           manufacturer: p.manufacturer || 'Generic',
           friendlyName: p.friendlyName || displayName,
-          isLinux: isLinux
+          isUSB: p.path.toLowerCase().includes('usb') || p.path.toLowerCase().includes('acm') || !!p.productId
         };
       });
+
+      // Filter out dozens of system ttyS ports on Linux unless they are the only ones
+      let filtered = mapped;
+      if (isLinux) {
+        const usbPorts = mapped.filter(p => p.isUSB);
+        // If we found USB/ACM ports, only show those to keep the list clean
+        if (usbPorts.length > 0) {
+          filtered = usbPorts;
+        }
+      }
+
+      // Sort: USB devices first
+      return filtered.sort((a, b) => (b.isUSB ? 1 : 0) - (a.isUSB ? 1 : 0));
     } catch (err) {
       console.error("Error listing serial ports:", err);
       return [];
