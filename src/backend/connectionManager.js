@@ -681,13 +681,14 @@ class ConnectionManager {
 
   relayToCloud(connectionId, protocol, payload) {
     const url = process.env.CLOUD_WS_URL;
-    if (!url) {
-      // Only log once to avoid spamming
-      if (!this.urlWarningLogged) {
-        console.log("⚠️ No CLOUD_WS_URL found in .env. Data will only stay local.");
-        this.urlWarningLogged = true;
-      }
+    if (!url || url.includes("localhost") || (typeof window !== 'undefined' && url.includes(window.location.host))) {
       return;
+    }
+    
+    // If we are already on the hub.tansam.org server, don't relay to ourselves
+    if (process.env.HOSTNAME === 'tansam' || process.env.USER === 'root') {
+       // Simple heuristic: if we are on the linux server, we are the receiver, not the sender
+       return;
     }
 
     if (!this.cloudWs || this.cloudWs.readyState !== 1) {
