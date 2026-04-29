@@ -750,11 +750,18 @@ class ConnectionManager {
   async listSerialPorts() {
     try {
       const ports = await SerialPort.list();
-      return ports.map(p => ({
-        path: p.path,
-        manufacturer: p.manufacturer,
-        friendlyName: p.friendlyName || p.path
-      }));
+      return ports.map(p => {
+        // On Linux, make sure we show the full /dev/ path
+        const isLinux = process.platform === 'linux';
+        const displayName = (isLinux && !p.path.startsWith('/dev/')) ? `/dev/${p.path}` : p.path;
+        
+        return {
+          path: p.path,
+          manufacturer: p.manufacturer || 'Generic',
+          friendlyName: p.friendlyName || displayName,
+          isLinux: isLinux
+        };
+      });
     } catch (err) {
       console.error("Error listing serial ports:", err);
       return [];

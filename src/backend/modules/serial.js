@@ -2,8 +2,16 @@ import { SerialPort, ReadlineParser } from "serialport";
 
 export function createSerialConnection(config) {
   try {
+    let portPath = config.port;
+    
+    // 🐧 Linux Auto-Correction: Add /dev/ if it's missing (e.g. ttyUSB0 -> /dev/ttyUSB0)
+    if (process.platform === 'linux' && portPath && !portPath.startsWith('/') && !portPath.startsWith('COM')) {
+      portPath = `/dev/${portPath}`;
+      console.log(`🐧 Linux Path Correction: ${config.port} -> ${portPath}`);
+    }
+
     const port = new SerialPort({
-      path: config.port,
+      path: portPath,
       baudRate: Number(config.baudRate)
     });
     // Use LF as delimiter; CR (from CRLF) will be trimmed in handler
