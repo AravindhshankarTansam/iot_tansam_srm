@@ -392,14 +392,35 @@ class ConnectionManager {
       }
     }
     else if (type === "serial") {
-      entry = createSerialConnection(config);
+      try {
+        // 🐧 Platform Guard: If we're on Linux but trying to open a Windows port (COMx), 
+        // or vice versa, don't even try - just create a virtual entry for the bridge.
+        const isLinux = process.platform === 'linux';
+        const isWindowsPort = config.port && config.port.toUpperCase().startsWith('COM');
+        
+        if (isLinux && isWindowsPort) {
+          console.log(`ℹ️  Linux Server: Detected Windows port ${config.port}. Creating virtual connection for relay.`);
+          entry = { port: null, parser: null };
+        } else {
+          entry = createSerialConnection(config);
+        }
+      } catch (err) {
+        console.warn(`⚠️  Serial port ${config.port} could not be opened: ${err.message}. Creating virtual connection for bridge mode.`);
+        entry = { port: null, parser: null, error: err.message };
+      }
+
       // Initialize serial-specific properties
       entry.dataCache = [];
       entry.dataListenerSet = false;
       // Store connection before setting listener
       this.connections[id] = { id, type, dbType: undefined, config, ...entry };
-      // Immediately ensure listener is attached
-      this.ensureSerialListener(id, 1000);
+      // Immediately ensure listener is attached if port was opened
+      if (entry.parser) {
+        this.ensureSerialListener(id, 1000);
+      } else {
+        // Mark as listener set so we don't try to attach to a null parser later
+        this.connections[id].dataListenerSet = true;
+      }
       return this.connections[id];
     }
     else if (type === "http") {

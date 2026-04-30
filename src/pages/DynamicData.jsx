@@ -742,6 +742,7 @@ export default function DynamicData() {
           </>
         );
       case "serial":
+        const isWindowsPort = (form.config.port || "").toUpperCase().startsWith("COM");
         return (
           <>
             <div className="flex flex-col gap-2">
@@ -753,15 +754,15 @@ export default function DynamicData() {
                   <button 
                     type="button"
                     onClick={() => setManualPortEntry(!manualPortEntry)}
-                    className="text-[10px] text-blue-500 hover:underline"
+                    className="text-[10px] text-blue-500 hover:underline font-medium"
                   >
-                    {manualPortEntry ? "Switch to List" : "Enter Manually"}
+                    {manualPortEntry ? "← Use Scanned List" : "✏️ Enter Manually"}
                   </button>
                   {!manualPortEntry && (
                     <button 
                       type="button"
                       onClick={fetchAvailablePorts}
-                      className="text-[10px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 px-2 py-0.5 rounded transition-colors"
+                      className="text-[10px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 px-2 py-0.5 rounded transition-colors flex items-center gap-1"
                     >
                       {isFetchingPorts ? "Scanning..." : "🔄 Refresh List"}
                     </button>
@@ -770,12 +771,25 @@ export default function DynamicData() {
               </div>
               
               {manualPortEntry ? (
-                <input 
-                  placeholder="/dev/ttyUSB0 or COM3" 
-                  value={form.config.port || ""} 
-                  onChange={(e) => setConfigField("port", e.target.value)} 
-                  className={inputStyle} 
-                />
+                <div className="flex flex-col gap-1">
+                  <input 
+                    placeholder="/dev/ttyUSB0 or COM3" 
+                    value={form.config.port || ""} 
+                    onChange={(e) => setConfigField("port", e.target.value)} 
+                    className={inputStyle} 
+                  />
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 italic">
+                    Note: For Linux servers, use <code className="bg-slate-100 dark:bg-slate-800 px-1">/dev/ttyUSB0</code>. For Windows agents, use <code className="bg-slate-100 dark:bg-slate-800 px-1">COM3</code>.
+                  </p>
+                  {isWindowsPort && (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg p-2 mt-1">
+                      <p className="text-[10px] text-amber-700 dark:text-amber-300 leading-tight">
+                        <strong>⚠️ Bridge Mode Detected:</strong> You are entering a Windows port on a Linux-hosted server. 
+                        This connection will act as a <strong>Virtual Bridge</strong>. Data will only appear if you run a local TANSAM agent on your Windows machine to relay the hardware data.
+                      </p>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <select 
                   value={form.config.port || ""} 
@@ -789,12 +803,15 @@ export default function DynamicData() {
                     </option>
                   ))}
                   {availablePorts.length === 0 && !isFetchingPorts && (
-                    <option disabled>No USB ports detected</option>
+                    <option disabled>No USB ports detected on server</option>
                   )}
                 </select>
               )}
             </div>
-            <input placeholder="Baud Rate (e.g. 9600)" type="number" value={form.config.baudRate || ""} onChange={(e) => setConfigField("baudRate", e.target.value)} className={inputStyle} />
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Baud Rate</label>
+              <input placeholder="Baud Rate (e.g. 9600)" type="number" value={form.config.baudRate || ""} onChange={(e) => setConfigField("baudRate", e.target.value)} className={inputStyle} />
+            </div>
           </>
         );
       default:
