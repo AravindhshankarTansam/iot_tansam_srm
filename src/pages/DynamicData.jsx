@@ -255,9 +255,12 @@ export default function DynamicData() {
       return;
     }
 
+    const baudRate = Number(form.config.baudRate) || 9600;
+    console.log(`🔌 Attempting Direct USB connection at ${baudRate} baud...`);
+
     try {
       const port = await navigator.serial.requestPort();
-      await port.open({ baudRate: 9600 });
+      await port.open({ baudRate });
       webSerialPortRef.current = port;
       setWebSerialActive(true);
       
@@ -266,22 +269,28 @@ export default function DynamicData() {
       const reader = textDecoder.readable.getReader();
       webSerialReaderRef.current = reader;
 
-      console.log("🔌 Web Serial connected");
+      let lineBuffer = "";
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
         if (value) {
-          const lines = value.split(/\r?\n/);
+          lineBuffer += value;
+          const lines = lineBuffer.split(/\r?\n/);
+          
+          // Keep the last partial line in the buffer
+          lineBuffer = lines.pop() || "";
+
           for (const line of lines) {
-            if (line.trim()) {
+            const cleanLine = line.trim();
+            if (cleanLine) {
               // Send to backend as a relay message
               if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
                 wsRef.current.send(JSON.stringify({
                   type: "relay",
                   connectionId: "web-serial",
                   protocol: "serial",
-                  payload: { raw: line.trim(), timestamp: new Date().toISOString() }
+                  payload: { raw: cleanLine, timestamp: new Date().toISOString() }
                 }));
               }
             }
@@ -290,6 +299,9 @@ export default function DynamicData() {
       }
     } catch (err) {
       console.error("Web Serial Error:", err);
+      if (err.name !== "NotFoundError") {
+        alert(`USB Error: ${err.message}`);
+      }
       setWebSerialActive(false);
     }
   };
