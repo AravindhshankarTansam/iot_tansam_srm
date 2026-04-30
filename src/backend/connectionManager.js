@@ -3,6 +3,7 @@ import { createMqttConnection } from "./modules/mqtt.js";
 import { createSerialConnection } from "./modules/serial.js";
 import { createHttpConnection } from "./modules/http.js";
 import { SerialPort } from "serialport";
+import WebSocket from 'ws';
 
 class ConnectionManager {
   constructor() {
@@ -220,9 +221,15 @@ class ConnectionManager {
         if (c.dataCache.length > softLimit) {
           c.dataCache = c.dataCache.slice(-softLimit);
         }
+        
+        // Broadcast to local UI
         if (this.wss) {
           this.broadcastUpdate(connectionId, "serial", flatRow);
         }
+
+        // ☁️ RELAY TO CLOUD: Push data to your production domain
+        this.relayToCloud(connectionId, "serial", flatRow);
+        
       } catch (err) {
         console.error(`Error processing serial data: ${err.message}`);
       }
@@ -639,66 +646,9 @@ class ConnectionManager {
       c.dataCache = [];
     }
 
-    // Always ensure the data listener is attached once the parser exists
-    if (!c.dataListenerSet) {
-      // 🐧 Linux Guard: If we are on a Linux cloud server, don't try to open "COM" ports
-      if (process.platform === 'linux' && c.config.port && c.config.port.startsWith('COM')) {
-        console.log(`ℹ️  Cloud Server: Ignoring local port ${c.config.port}. Waiting for relayed data instead...`);
-        c.dataListenerSet = true; // Mark as "set" so we don't keep trying
-        return;
-      }
-
-      if (c.parser) {
-        c.parser.on('data', (line) => {
-          try {
-            if (!line || (typeof line === 'string' && line.trim() === '')) {
-              return; // ignore empty lines
-            }
-            // Log the incoming line once for visibility
-            console.log(`🔌 Serial line (${id}):`, typeof line === 'string' ? line : JSON.stringify(line));
-            let parsed;
-            try {
-              // Try to parse as JSON first
-              parsed = JSON.parse(line);
-            } catch {
-              // Attempt to repair common malformed JSON fragments
-              const repaired = this.tryRepairJsonString(line);
-              if (repaired) {
-                parsed = repaired;
-              } else {
-                // Fallback: coerce to an object for charts
-                parsed = this.parseNonJsonSerialLine(line);
-              }
-            }
-
-            // Normalize to flat row like MQTT/HTTP
-            const flatRow = {
-              timestamp: new Date().toISOString(),
-              ...this.toReadableSerialRow(parsed)
-            };
-
-            c.dataCache.push(flatRow);
-
-            // Keep only the latest 'limit' messages (soft cap)
-            if (c.dataCache.length > limit) {
-              c.dataCache = c.dataCache.slice(-limit);
-            }
-
-            // Emit WebSocket update if available
-            if (this.wss) {
-              this.broadcastUpdate(id, "Serial Data", flatRow);
-            }
-            // RELAY TO CLOUD: Push data to your production domain
-            this.relayToCloud(id, "Serial Data", flatRow);
-          } catch (err) {
-            console.error(`Error processing serial data: ${err.message}`);
-          }
-        });
-        c.dataListenerSet = true;
-        console.log(`✅ Serial data listener set up for connection ${id}`);
-      } else {
-        console.error(`❌ No parser available for serial connection ${id}`);
-      }
+    // Ensure listener is attached
+    if (!c.dataListenerSet && c.parser) {
+      this.ensureSerialListener(id, limit);
     }
 
     return c.dataCache;
@@ -712,16 +662,38 @@ class ConnectionManager {
         id,
         type,
         config: { name: `Remote ${type} (${id})` },
-        dataCache: (type === 'Serial Data' || type === 'serial') ? [] : {}
+        dataCache: (type === 'Serial Data' || type === 'serial' || type === 'web-serial') ? [] : {}
       };
     }
+    return this.connections[id];
+  }
+
+  // 🔥 NEW: Store relayed data into the connection's cache
+  storeRelayedData(id, protocol, payload) {
+    const conn = this.ensureVirtualConnection(id, protocol);
+    if (!conn) return null;
+
+    const flatRow = {
+      timestamp: new Date().toISOString(),
+      ...(typeof payload === 'object' ? payload : { raw: String(payload) })
+    };
+
+    if (Array.isArray(conn.dataCache)) {
+      conn.dataCache.push(flatRow);
+      if (conn.dataCache.length > 1000) conn.dataCache = conn.dataCache.slice(-1000);
+    } else {
+      const topic = protocol || 'data';
+      if (!conn.dataCache[topic]) conn.dataCache[topic] = [];
+      conn.dataCache[topic].push(flatRow);
+      if (conn.dataCache[topic].length > 1000) conn.dataCache[topic] = conn.dataCache[topic].slice(-1000);
+    }
+
+    return flatRow;
   }
 
   relayToCloud(connectionId, protocol, payload) {
     const url = process.env.CLOUD_WS_URL;
-    if (!url || url.includes("localhost") || (typeof window !== 'undefined' && url.includes(window.location.host))) {
-      return;
-    }
+    if (!url) return;
     
     // If we are already on the hub.tansam.org server, don't relay to ourselves
     if (process.env.HOSTNAME === 'tansam' || process.env.USER === 'root') {

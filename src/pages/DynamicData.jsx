@@ -245,6 +245,66 @@ export default function DynamicData() {
   const [availablePorts, setAvailablePorts] = useState([]);
   const [isFetchingPorts, setIsFetchingPorts] = useState(false);
   const [manualPortEntry, setManualPortEntry] = useState(false);
+  const [webSerialActive, setWebSerialActive] = useState(false);
+  const webSerialPortRef = useRef(null);
+  const webSerialReaderRef = useRef(null);
+
+  const handleWebSerialConnect = async () => {
+    if (!("serial" in navigator)) {
+      alert("Web Serial API not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+
+    try {
+      const port = await navigator.serial.requestPort();
+      await port.open({ baudRate: 9600 });
+      webSerialPortRef.current = port;
+      setWebSerialActive(true);
+      
+      const textDecoder = new TextDecoderStream();
+      const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+      const reader = textDecoder.readable.getReader();
+      webSerialReaderRef.current = reader;
+
+      console.log("🔌 Web Serial connected");
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (value) {
+          const lines = value.split(/\r?\n/);
+          for (const line of lines) {
+            if (line.trim()) {
+              // Send to backend as a relay message
+              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({
+                  type: "relay",
+                  connectionId: "web-serial",
+                  protocol: "serial",
+                  payload: { raw: line.trim(), timestamp: new Date().toISOString() }
+                }));
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Web Serial Error:", err);
+      setWebSerialActive(false);
+    }
+  };
+
+  const handleWebSerialDisconnect = async () => {
+    try {
+      if (webSerialReaderRef.current) {
+        await webSerialReaderRef.current.cancel();
+      }
+      if (webSerialPortRef.current) {
+        await webSerialPortRef.current.close();
+      }
+    } catch (e) {}
+    setWebSerialActive(false);
+  };
 
   const fetchAvailablePorts = async () => {
     setIsFetchingPorts(true);
@@ -474,6 +534,8 @@ export default function DynamicData() {
           wsReconnectTimerRef.current = null;
         }
         console.log("🟢 WebSocket connected to backend");
+        // 🔥 NEW: Refresh connections immediately on connect/reconnect to sync with backend state
+        fetchConnections();
       };
       const scheduleReconnect = () => {
         if (wsStoppedRef.current) return;
@@ -505,7 +567,7 @@ export default function DynamicData() {
 
           // If update relates to currently selected connection, update cached data for serial/topic updates
           if (msg.id === selectedId) {
-            if (msg.topic === "serial_data" || msg.table === "serial_data") {
+            if (msg.topic === "serial_data" || msg.table === "serial_data" || msg.topic === "serial" || msg.topic === "Serial Data") {
               // update or create serial_data table in cached
               setCached((prevCached) => {
                 const existing = prevCached.find((t) => t.table === "serial_data");
@@ -837,13 +899,21 @@ export default function DynamicData() {
               </select>
             </div>
             <div className="mb-5 flex flex-col gap-3">{renderConfigInputs()}</div>
-            <div className="flex gap-4 mt-2">
+            <div className="flex flex-wrap gap-4 mt-2">
               <button onClick={handleAdd} className="rounded-xl bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-600 transition">
                 Add Connection
               </button>
               <button onClick={fetchConnections} className="rounded-xl bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300 transition">
                 Refresh List
               </button>
+              {formType === "serial" && (
+                <button 
+                  onClick={webSerialActive ? handleWebSerialDisconnect : handleWebSerialConnect} 
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold text-white shadow transition flex items-center gap-2 ${webSerialActive ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}
+                >
+                  {webSerialActive ? "🔌 Disconnect USB" : "🔌 Direct USB (Browser)"}
+                </button>
+              )}
             </div>
           </section>
 

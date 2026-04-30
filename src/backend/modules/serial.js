@@ -14,7 +14,8 @@ export function createSerialConnection(config) {
       path: portPath,
       baudRate: Number(config.baudRate)
     });
-    // Use LF as delimiter; CR (from CRLF) will be trimmed in handler
+    // Use LF as delimiter. Standard for most serial devices. 
+    // CR (from CRLF) will be automatically trimmed in the connection manager.
     const parser = port.pipe(new ReadlineParser({ delimiter: "\n" }));
     
     // Add error handling

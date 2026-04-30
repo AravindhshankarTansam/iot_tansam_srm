@@ -62,16 +62,19 @@ wss.on("connection", (ws, req) => {
       const data = JSON.parse(message);
 
       if (data.type === "relay") {
-        console.log(`📡 Relay received for ${data.connectionId}`);
+        console.log(`📡 Relay received for ${data.connectionId} (${data.protocol})`);
         
-        // 🔥 NEW: Automatically create a virtual connection on the cloud so it shows in the UI
-        connectionManager.ensureVirtualConnection(data.connectionId, data.protocol);
+        // Store the data in the server's cache
+        const flatRow = connectionManager.storeRelayedData(data.connectionId, data.protocol, data.payload);
         
-        connectionManager.broadcastUpdate(
-          data.connectionId,
-          data.protocol,
-          data.payload
-        );
+        if (flatRow) {
+          // Broadcast the update to all connected UIs
+          connectionManager.broadcastUpdate(
+            data.connectionId,
+            data.protocol,
+            flatRow
+          );
+        }
       }
     } catch (err) {
       console.error("❌ Invalid WS message:", err.message);
