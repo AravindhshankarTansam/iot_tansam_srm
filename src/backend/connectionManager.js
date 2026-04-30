@@ -12,6 +12,24 @@ class ConnectionManager {
     this.wss = null; // WebSocket server reference
   }
 
+  getFormattedTimestamp() {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    const strHours = String(hours).padStart(2, '0');
+
+    return `${day}-${month}-${year} ${strHours}:${minutes}:${seconds} ${ampm}`;
+  }
+
   // Attempt to coerce non-JSON serial lines into a flat object for charts
   parseNonJsonSerialLine(line) {
     const text = (typeof line === 'string' ? line : String(line)).trim();
@@ -41,12 +59,16 @@ class ConnectionManager {
           let key = token.slice(0, sepIndex).trim().toLowerCase();
           let valRaw = token.slice(sepIndex + 1).trim();
           
-          // 🔥 FUZZY KEY MATCHING: Fix fragments like "ce", "DDDDDistance", etc.
-          if (key.includes('dist') || key === 'ce' || key.includes('stance')) {
-            key = 'Distance';
+          // 🔥 FUZZY KEY MATCHING: Fix fragments like "ce", "DDDDDistance", "asvalue", "svalue", etc.
+          const cleanKey = key.replace(/[^a-z0-9_]/g, '');
+          
+          if (cleanKey.includes('dist') || cleanKey === 'ce' || cleanKey.includes('stance')) {
+            key = 'distance';
+          } else if (cleanKey.includes('gas') || cleanKey.endsWith('asvalue') || cleanKey === 'svalue') {
+            key = 'gas_value';
           } else {
             // Standard cleanup for other keys
-            key = key.replace(/[^a-z0-9_]/g, '');
+            key = cleanKey;
             if (key.length === 0) key = 'value';
           }
           
@@ -216,7 +238,7 @@ class ConnectionManager {
           const repaired = this.tryRepairJsonString(line);
           parsed = repaired || this.parseNonJsonSerialLine(line);
         }
-        const flatRow = { timestamp: new Date().toISOString(), ...this.toReadableSerialRow(parsed) };
+        const flatRow = { ...this.toReadableSerialRow(parsed), timestamp: this.getFormattedTimestamp() };
         c.dataCache.push(flatRow);
         if (c.dataCache.length > softLimit) {
           c.dataCache = c.dataCache.slice(-softLimit);
@@ -348,9 +370,9 @@ class ConnectionManager {
 
           // Flatten data for EDA: merge timestamp and data fields
           const flatData = {
-            timestamp: new Date().toISOString(),
             topic: receivedTopic,
-            ...parsedData
+            ...parsedData,
+            timestamp: this.getFormattedTimestamp()
           };
 
           connection.dataCache[receivedTopic].push(flatData);
@@ -405,7 +427,10 @@ class ConnectionManager {
         const isLinux = process.platform === 'linux';
         const isWindowsPort = config.port && config.port.toUpperCase().startsWith('COM');
         
-        if (isLinux && isWindowsPort) {
+        if (!config.port) {
+          console.log(`ℹ️  No port path provided for connection ${id}. Creating virtual connection.`);
+          entry = { port: null, parser: null };
+        } else if (isLinux && isWindowsPort) {
           console.log(`ℹ️  Linux Server: Detected Windows port ${config.port}. Creating virtual connection for relay.`);
           entry = { port: null, parser: null };
         } else {
@@ -570,29 +595,29 @@ class ConnectionManager {
         // If response is an array, add each item with timestamp
         responseData.forEach(item => {
           flatData = {
-            timestamp: new Date().toISOString(),
             endpoint: cacheKey,
             deviceId: c.config?.deviceId || null,
-            ...(typeof item === 'object' ? item : { value: item })
+            ...(typeof item === 'object' ? item : { value: item }),
+            timestamp: this.getFormattedTimestamp()
           };
           c.dataCache[cacheKey].push(flatData);
         });
       } else if (typeof responseData === 'object' && responseData !== null) {
         // If response is an object, flatten it with timestamp
         flatData = {
-          timestamp: new Date().toISOString(),
           endpoint: cacheKey,
           deviceId: c.config?.deviceId || null,
-          ...responseData
+          ...responseData,
+          timestamp: this.getFormattedTimestamp()
         };
         c.dataCache[cacheKey].push(flatData);
       } else {
         // Primitive value, wrap it
         flatData = {
-          timestamp: new Date().toISOString(),
           endpoint: cacheKey,
           deviceId: c.config?.deviceId || null,
-          value: responseData
+          value: responseData,
+          timestamp: this.getFormattedTimestamp()
         };
         c.dataCache[cacheKey].push(flatData);
       }
@@ -674,8 +699,8 @@ class ConnectionManager {
     if (!conn) return null;
 
     const flatRow = {
-      timestamp: new Date().toISOString(),
-      ...(typeof payload === 'object' ? payload : { raw: String(payload) })
+      ...(typeof payload === 'object' ? payload : { raw: String(payload) }),
+      timestamp: this.getFormattedTimestamp()
     };
 
     if (Array.isArray(conn.dataCache)) {

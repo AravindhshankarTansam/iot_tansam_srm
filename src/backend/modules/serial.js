@@ -3,6 +3,9 @@ import { SerialPort, ReadlineParser } from "serialport";
 export function createSerialConnection(config) {
   try {
     let portPath = config.port;
+    if (!portPath) {
+      throw new Error('"path" is not defined: port path is empty');
+    }
     
     // 🐧 Linux Auto-Correction: Add /dev/ if it's missing (e.g. ttyUSB0 -> /dev/ttyUSB0)
     if (process.platform === 'linux' && portPath && !portPath.startsWith('/') && !portPath.startsWith('COM')) {
