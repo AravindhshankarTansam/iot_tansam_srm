@@ -1,4 +1,4 @@
-﻿const fs = require("fs");
+const fs = require("fs");
 const path = "src/pages/Data.jsx";
 let text = fs.readFileSync(path, "utf8");
 const start = text.indexOf("                  return (");
