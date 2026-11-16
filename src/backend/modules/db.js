@@ -10,3 +10,4 @@ function getTableData(db, table, cb) {
   db.all(`SELECT * FROM ${table}`, cb);
 }
 module.exports = { connect, getTables, getTableData };
+)
