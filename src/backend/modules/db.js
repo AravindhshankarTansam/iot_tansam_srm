@@ -11,3 +11,4 @@ function getTableData(db, table, cb) {
 }
 module.exports = { connect, getTables, getTableData };
 )
+₹&@
