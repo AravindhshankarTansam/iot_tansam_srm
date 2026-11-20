@@ -15,7 +15,7 @@ const nowIso = () => new Date().toISOString();
 export default function DataPage() {
   const { datasets, saveDataset, deleteDataset, generateId } = useStore();
   const navigate = useNavigate();
-  const {
+  const {₹&@
     register,
     handleSubmit,
     watch,
